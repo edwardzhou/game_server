@@ -1,8 +1,22 @@
 class SessionsController < WebsocketRails::BaseController
   # To change this template use File | Settings | File Templates.
 
+  @@all_users = {}
+
   def sign_in
+
     username = message[:username].try(:downcase)
+
+    unless data_store[:current_user].nil?
+      trigger_failure({:error_message => "login as #{data_store[:current_user].username} already!"})
+      return
+    end
+
+    unless @@all_users[username].nil?
+      trigger_failure({:error_message => "#{username} login in already!"})
+      return
+    end
+
     user = User.find_by_username(username)
     unless user
       trigger_failure({:error_message => "user #{username} do not exists!"})
@@ -13,10 +27,13 @@ class SessionsController < WebsocketRails::BaseController
 
     if password_md5.eql?(user.password_digest)
       trigger_success({:message => "login ok"})
+      data_store[:current_user] = user
+      @@all_users[username] = user
     else
       trigger_failure({:error_message => "password incorrect!"})
     end
 
+    broadcast_message "sessions.new_login", user
 
   end
 
@@ -38,7 +55,19 @@ class SessionsController < WebsocketRails::BaseController
   end
 
   def sign_out
+    if data_store[:current_user].nil?
+      trigger_failure({:error_message => "not sign in yet!"})
+      return
+    end
 
+    user = data_store[:current_user]
+
+    data_store[:current_user] = nil
+    @@all_users.delete(user.username)
+
+    trigger_success({:message => "sign out ok"})
+
+    broadcast_message "sessions.user_logout", user
   end
 
 end
