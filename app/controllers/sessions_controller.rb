@@ -1,7 +1,17 @@
 class SessionsController < WebsocketRails::BaseController
   # To change this template use File | Settings | File Templates.
 
+  inherited(ApplicationController)
+
   @@all_users = {}
+
+  def client_connected
+    data_store[:current_user] = nil
+  end
+
+  def client_disconnected
+
+  end
 
   def sign_in
 
@@ -68,6 +78,14 @@ class SessionsController < WebsocketRails::BaseController
     trigger_success({:message => "sign out ok"})
 
     broadcast_message "sessions.user_logout", user
+  end
+
+  private
+  def check_login
+    if data_store[:current_user].nil?
+      trigger_failure({:error_message => "please sign in first!"})
+      return
+    end
   end
 
 end
