@@ -12,7 +12,7 @@ myself = @
   console.log "failure: #{JSON.stringify(resp)}"
 
 jQuery ->
-  myself.dispatcher = new WebSocketRails("localhost:3000/websocket")
+  myself.dispatcher = new WebSocketRails("/websocket")
 
   myself.dispatcher.on_open = (data) ->
     console.log "connection has been established: #{JSON.stringify(data)}"
